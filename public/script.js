@@ -7,11 +7,19 @@ class MindMateApp {
         this.moodData = {}; // Store mood data by date (YYYY-MM-DD)
         this.selectedDate = null;
         this.selectedMood = null;
+        
+        // Voice-related state
+        this.recognition = null;
+        this.isRecording = false;
+        this.voices = [];
+        this.currentVoice = null;
+        
         this.init();
     }
 
     init() {
         this.bindEvents();
+        this.initVoiceFeatures();
         this.showLogin();
     }
 
@@ -56,6 +64,25 @@ class MindMateApp {
             if (e.key === 'Enter') this.sendChat();
         });
         document.getElementById('reset-chat').addEventListener('click', () => this.resetChat());
+        
+        // Voice input button
+        const voiceBtn = document.getElementById('voice-btn');
+        if (voiceBtn) {
+            voiceBtn.addEventListener('click', () => this.toggleRecording());
+        }
+        
+        // Bot voice selection
+        const voiceSelect = document.getElementById('bot-voice-select');
+        if (voiceSelect) {
+            voiceSelect.addEventListener('change', (e) => {
+                const index = e.target.value;
+                if (index === '') {
+                    this.currentVoice = null;
+                } else if (this.voices[index]) {
+                    this.currentVoice = this.voices[index];
+                }
+            });
+        }
 
         // Logout
         document.getElementById('logout-btn').addEventListener('click', () => this.logout());
@@ -75,22 +102,46 @@ class MindMateApp {
 
     async handleAuth() {
         const mode = document.getElementById('auth-mode').value;
+        const role = document.getElementById('auth-role').value; // ✅ Added role selection
         const email = document.getElementById('auth-email').value;
         const password = document.getElementById('auth-password').value;
+        const doctorName = document.getElementById('doctor-name').value;
+        const doctorOrg = document.getElementById('doctor-org').value;
         const messageEl = document.getElementById('auth-message');
-
+    
         try {
             const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+            
+            // ✅ Handle role selection + doctor fields
+            const body = mode === 'login' ? 
+                { email, password } : 
+                { 
+                    email, 
+                    password, 
+                    role, 
+                    name: role === 'doctor' ? doctorName : null,
+                    organization: role === 'doctor' ? doctorOrg : null 
+                };
+            
             const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify(body) // ✅ Updated body with role/name/organization
             });
-
+    
             const data = await res.json();
             if (data.success) {
                 this.userId = data.userId;
+                this.role = data.role || role; // ✅ Store role
+                this.doctorName = data.name;   // ✅ Store doctor name
+                this.organization = data.organization;
+                
+                // ✅ Update UI with role info
                 document.getElementById('user-id').textContent = this.userId;
+                document.getElementById('user-role').textContent = 
+                    this.role === 'doctor' ? `Dr. ${this.doctorName || 'Doctor'}` : 'User';
+                document.getElementById('user-org').textContent = 
+                    this.role === 'doctor' && this.organization ? `${this.organization}` : '';
                 
                 // CRITICAL: Always check backend status on EVERY login
                 const questionnaireCompleted = await this.checkQuestionnaireCompleted();
@@ -109,6 +160,7 @@ class MindMateApp {
             messageEl.innerHTML = `<span class="text-red-500">Error: ${err.message}</span>`;
         }
     }
+    
 
     showLogin() {
         document.getElementById('login-screen').classList.remove('hidden');
@@ -425,6 +477,154 @@ class MindMateApp {
         return emojis[scoreStr] || '❓';
     }
 
+    // ---------- Voice Features ----------
+    
+// Replace the initVoiceFeatures() and toggleRecording() methods with this FIXED version:
+
+initVoiceFeatures() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+        this.recognition = new SpeechRecognition();
+        this.recognition.lang = 'en-US';
+        this.recognition.continuous = false;  // ✅ FIXED: false for push-to-talk
+        this.recognition.interimResults = true;
+        this.recognition.maxAlternatives = 1;
+        
+        // ✅ FIXED: Single comprehensive result handler
+        this.recognition.onresult = (event) => {
+            let finalTranscript = '';
+            let interimTranscript = '';
+            
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const result = event.results[i];
+                if (result.isFinal) {
+                    finalTranscript += result[0].transcript;
+                } else {
+                    interimTranscript += result[0].transcript;
+                }
+            }
+            
+            const transcript = (finalTranscript + ' ' + interimTranscript).trim();
+            if (transcript) {
+                const input = document.getElementById('chat-input');
+                input.value = input.value ? (input.value + ' ' + transcript) : transcript;
+                input.focus();
+            }
+        };
+        
+        this.recognition.onerror = (event) => {
+            console.error('Speech error:', event.error);
+            this.stopRecording(); // ✅ Clean stop on error
+        };
+        
+        this.recognition.onend = () => {
+            // ✅ FIXED: Only auto-restart ONCE after speech ends
+            if (this.isRecording) {
+                this.stopRecording();
+            }
+        };
+        
+        // ✅ NEW: Visual feedback during recognition
+        this.recognition.onstart = () => {
+            console.log('🎤 Listening...');
+        };
+        
+    } else {
+        console.warn('SpeechRecognition not supported');
+    }
+    
+    // SpeechSynthesis (unchanged)
+    if ('speechSynthesis' in window) {
+        const populateVoices = () => {
+            this.voices = window.speechSynthesis.getVoices();
+            const select = document.getElementById('bot-voice-select');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">Auto</option>';
+            this.voices.forEach((voice, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${voice.name} (${voice.lang})`;
+                select.appendChild(option);
+            });
+            
+            const englishVoice = this.voices.find(v => v.lang.startsWith('en'));
+            this.currentVoice = englishVoice || this.voices[0];
+        };
+        
+        populateVoices();
+        window.speechSynthesis.onvoiceschanged = populateVoices;
+    }
+}
+
+toggleRecording() {
+    if (!this.recognition) {
+        alert('Voice input not supported. Use Chrome/Edge.');
+        return;
+    }
+    
+    const btn = document.getElementById('voice-btn');
+    
+    if (!this.isRecording) {
+        // ✅ START: Clear + Listen (5-10 seconds max)
+        this.isRecording = true;
+        document.getElementById('chat-input').value = '';
+        
+        btn.textContent = '🔴';
+        btn.classList.add('recording');
+        btn.title = 'Listening... Click to stop';
+        
+        try {
+            console.log('🎤 Starting recognition...');
+            this.recognition.start();
+        } catch (err) {
+            console.error('Start failed:', err);
+            this.stopRecording();
+        }
+    } else {
+        this.stopRecording();
+    }
+}
+
+// ✅ NEW: Clean stop method
+stopRecording() {
+    this.isRecording = false;
+    if (this.recognition) {
+        this.recognition.stop();
+    }
+    const btn = document.getElementById('voice-btn');
+    if (btn) {
+        btn.textContent = '🎙';
+        btn.classList.remove('recording');
+        btn.title = 'Click to speak';
+    }
+}
+
+
+    
+    speak(text) {
+        if (!('speechSynthesis' in window)) return;
+        if (!text) return;
+        
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'en-US';
+        
+        if (this.currentVoice) {
+            utterance.voice = this.currentVoice;
+        }
+        
+        // Natural speech settings
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        
+        window.speechSynthesis.speak(utterance);
+    }
+
     renderChat() {
         const container = document.getElementById('chat-messages');
         container.innerHTML = this.chatHistory.map(msg => 
@@ -442,6 +642,11 @@ class MindMateApp {
         const prompt = input.value.trim();
         if (!prompt) return;
 
+        // Stop recording if active
+        if (this.isRecording) {
+            this.recognition.stop();
+        }
+
         this.chatHistory.push({ role: 'user', content: prompt });
         input.value = '';
         this.renderChat();
@@ -454,11 +659,24 @@ class MindMateApp {
         const data = await res.json();
         this.chatHistory.push({ role: 'assistant', content: data.response });
         this.renderChat();
+        
+        // Speak the response
+        this.speak(data.response);
     }
 
     resetChat() {
         this.chatHistory = [];
         document.getElementById('chat-messages').innerHTML = '';
+        
+        // Stop any ongoing speech
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+        
+        // Stop recording if active
+        if (this.isRecording) {
+            this.recognition.stop();
+        }
     }
 
     async loadDashboard() {
