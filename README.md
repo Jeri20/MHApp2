@@ -109,3 +109,8 @@ Deploy scalable cloud-based infrastructure.
 Collaborate with mental health professionals for validated guidance.
 
 Extend support via a mobile application.
+
+
+To run:
+npm install
+npm dev run
