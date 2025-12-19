@@ -8,20 +8,41 @@
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <div id="app" class="container mx-auto p-6 max-w-6xl">
         <!-- Login/Signup Screen -->
         <div id="login-screen" class="min-h-screen flex items-center justify-center">
             <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full">
                 <h1 class="text-4xl font-bold text-center text-gray-800 mb-8">🧠 MindMate</h1>
                 <div class="space-y-4">
+                    <!-- Login / Sign Up Toggle -->
                     <select id="auth-mode" class="w-full p-3 border border-gray-300 rounded-xl">
                         <option value="login">Login</option>
                         <option value="signup">Sign Up</option>
                     </select>
-                    <input type="email" id="auth-email" placeholder="Email" class="w-full p-3 border border-gray-300 rounded-xl">
-                    <input type="password" id="auth-password" placeholder="Password" class="w-full p-3 border border-gray-300 rounded-xl">
-                    <button id="auth-btn" class="w-full bg-blue-600 text-white p-3 rounded-xl font-semibold hover:bg-blue-700">Login</button>
+
+                    <!-- User vs Doctor Role -->
+                    <select id="auth-role" class="w-full p-3 border border-gray-300 rounded-xl">
+                        <option value="user">General User</option>
+                        <option value="doctor">Mental Health Specialist</option>
+                    </select>
+
+                    <!-- Doctor Fields (hidden by default) -->
+                    <input type="text" id="doctor-name" placeholder="Full Name (Doctor)"
+                           class="w-full p-3 border border-gray-300 rounded-xl hidden">
+                    <input type="text" id="doctor-org" placeholder="Organization/Clinic"
+                           class="w-full p-3 border border-gray-300 rounded-xl hidden">
+
+                    <!-- Common Fields -->
+                    <input type="email" id="auth-email" placeholder="Email"
+                           class="w-full p-3 border border-gray-300 rounded-xl">
+                    <input type="password" id="auth-password" placeholder="Password"
+                           class="w-full p-3 border border-gray-300 rounded-xl">
+                    
+                    <button id="auth-btn"
+                            class="w-full bg-blue-600 text-white p-3 rounded-xl font-semibold hover:bg-blue-700 transition-all">
+                        Login
+                    </button>
                 </div>
                 <p id="auth-message" class="mt-4 text-center"></p>
             </div>
@@ -29,172 +50,348 @@
 
         <!-- Main App (Hidden initially) -->
         <div id="main-app" class="hidden min-h-screen">
-            <!-- Sidebar -->
+            <!-- Sidebar Navigation -->
             <div class="flex">
                 <div class="w-64 bg-white shadow-lg p-6 h-screen sticky top-0">
-                    <h2 class="text-2xl font-bold mb-8">MindMate Menu</h2>
+                    <h2 class="text-2xl font-bold mb-8 text-gray-800">MindMate Menu</h2>
                     <nav class="space-y-4">
-                        <button class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-blue-500 bg-blue-50" data-page="landing">🏠 Landing</button>
-                        <button class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-green-500" data-page="questionnaire">📝 Questionnaire</button>
-                        <button class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-purple-500" data-page="journal">📔 Journal</button>
-                        <button class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-orange-500" data-page="mood">📅 Mood Calendar</button>
-                        <button class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-indigo-500" data-page="chatbot">🤖 Chatbot</button>
-                        <button class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-teal-500" data-page="dashboard">📊 Dashboard</button>
+                        <!-- add IDs so script.js can toggle for doctor/user -->
+                        <button id="nav-landing"
+                                class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-blue-500 bg-blue-50"
+                                data-page="landing">🏠 Landing</button>
+                        <button id="nav-questionnaire"
+                                class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-green-500"
+                                data-page="questionnaire">📝 Questionnaire</button>
+                        <button id="nav-journal"
+                                class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-purple-500"
+                                data-page="journal">📔 Journal</button>
+                        <button id="nav-mood"
+                                class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-orange-500"
+                                data-page="mood">📅 Mood Calendar</button>
+                        <button id="nav-chatbot"
+                                class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-indigo-500"
+                                data-page="chatbot">🤖 Chatbot</button>
+                        <button id="nav-dashboard"
+                                class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-teal-500"
+                                data-page="dashboard">📊 Dashboard</button>
+                        <button id="nav-profile"
+                                class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-slate-500"
+                                data-page="profile">👤 Profile</button>
+                        <!-- Doctor-only entry -->
+                        <button id="nav-doctor-dashboard"
+                                class="page-btn w-full text-left p-3 rounded-xl hover:bg-blue-50 border-l-4 border-rose-500 hidden"
+                                data-page="doctor-dashboard">👨‍⚕️ Doctor Dashboard</button>
                     </nav>
                     <div class="mt-8 p-4 bg-gray-50 rounded-xl">
-                        <p class="font-semibold">👤 User ID: <span id="user-id"></span></p>
-                        <button id="logout-btn" class="w-full mt-4 bg-red-500 text-white p-2 rounded-xl hover:bg-red-600">Logout</button>
+                        <p class="font-semibold text-sm mb-2">👤 <span id="user-role"></span></p>
+                        <p class="font-semibold">ID: <span id="user-id"></span></p>
+                        <p class="text-sm text-gray-600 mt-1" id="user-org"></p>
+                        <button id="logout-btn"
+                                class="w-full mt-4 bg-red-500 text-white p-2 rounded-xl hover:bg-red-600 transition-all">
+                            Logout
+                        </button>
                     </div>
                 </div>
 
-                <!-- Main Content -->
+                <!-- Main Content Area -->
                 <div class="flex-1 p-8 overflow-y-auto">
-                    <!-- Landing Page -->
+                    <!-- Landing Page (users only) -->
                     <div id="landing-page" class="page-content">
                         <h1 class="text-5xl font-bold text-gray-800 mb-8">Welcome to MindMate 💙</h1>
                         <div class="bg-white p-8 rounded-2xl shadow-xl max-w-4xl">
                             <h2 class="text-2xl font-semibold mb-6">You're not alone</h2>
-                            <p class="text-lg mb-8">MindMate is your emotional support app to help track, reflect, and get help when needed.</p>
+                            <p class="text-lg mb-8">
+                                MindMate is your emotional support companion to help track, reflect,
+                                and connect when needed.
+                            </p>
                             <div class="grid md:grid-cols-2 gap-8 mb-8">
                                 <div>
                                     <h3 class="text-xl font-semibold mb-4">About Anxiety & Depression</h3>
-                                    <ul class="space-y-2">
-                                        <li>• Anxiety is your body's response to stress</li>
-                                        <li>• Depression causes persistent sadness</li>
+                                    <ul class="space-y-2 text-gray-700">
+                                        <li>• Anxiety is your body's natural response to stress</li>
+                                        <li>• Depression involves persistent sadness and loss of interest</li>
                                     </ul>
                                 </div>
                                 <div>
-                                    <h3 class="text-xl font-semibold mb-4">📞 Mental Health Helplines</h3>
-                                    <div class="space-y-2">
+                                    <h3 class="text-xl font-semibold mb-4">📞 Emergency Helplines</h3>
+                                    <div class="space-y-2 text-gray-700">
                                         <div><strong>India:</strong> iCall +91 9152987821</div>
-                                        <div><strong>USA:</strong> 988</div>
-                                        <div><strong>UK:</strong> 116 123</div>
+                                        <div><strong>USA:</strong> 988 Suicide & Crisis Lifeline</div>
+                                        <div><strong>UK:</strong> Samaritans 116 123</div>
                                     </div>
                                 </div>
                             </div>
-                            <p class="text-lg font-semibold text-red-600">If you're in crisis, please reach out. You matter. 💙</p>
+                            <p class="text-lg font-semibold text-red-600 p-4 bg-red-50 rounded-xl border border-red-200">
+                                💙 If you're in crisis, please reach out immediately. You matter.
+                            </p>
                         </div>
                     </div>
 
-                    <!-- Questionnaire Page -->
+                    <!-- Questionnaire Page (users only) -->
                     <div id="questionnaire-page" class="page-content hidden">
-                        <h2 class="text-3xl font-bold mb-8">📝 Mental Health Questionnaire</h2>
-                        <div class="grid md:grid-cols-2 gap-8">
-                            <!-- GAD-7 -->
+                        <h2 class="text-3xl font-bold mb-8">📝 Mental Health Assessment</h2>
+                        <div class="grid md:grid-cols-2 gap-8 mb-8">
                             <div class="bg-white p-8 rounded-2xl shadow-xl">
                                 <h3 class="text-2xl font-semibold mb-6 text-blue-600">GAD-7 (Anxiety)</h3>
-                                <div id="gad-sliders" class="space-y-4 mb-8"></div>
+                                <div id="gad-sliders" class="space-y-4"></div>
                             </div>
-                            <!-- PHQ-9 -->
                             <div class="bg-white p-8 rounded-2xl shadow-xl">
                                 <h3 class="text-2xl font-semibold mb-6 text-purple-600">PHQ-9 (Depression)</h3>
-                                <div id="phq-sliders" class="space-y-4 mb-8"></div>
+                                <div id="phq-sliders" class="space-y-4"></div>
                             </div>
                         </div>
-                        <button id="submit-questionnaire" class="bg-green-600 text-white px-8 py-4 rounded-xl text-xl font-semibold hover:bg-green-700">Submit</button>
+                        <button id="submit-questionnaire"
+                                class="bg-green-600 text-white px-12 py-4 rounded-xl text-xl font-semibold hover:bg-green-700 shadow-lg transition-all">
+                            Submit Assessment
+                        </button>
                         <div id="questionnaire-result" class="mt-8"></div>
                     </div>
 
-                    <!-- Journal Page -->
+                    <!-- Journal Page (users only) -->
                     <div id="journal-page" class="page-content hidden">
-                        <h2 class="text-3xl font-bold mb-8">📔 Your Daily Journal</h2>
+                        <h2 class="text-3xl font-bold mb-8">📔 Daily Journal</h2>
                         <div class="bg-white p-8 rounded-2xl shadow-xl">
-                            <textarea id="journal-text" rows="10" class="w-full p-4 border border-gray-300 rounded-xl text-lg resize-vertical" placeholder="Write your thoughts..."></textarea>
-                            <button id="save-journal" class="mt-6 bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-blue-700">Save Entry</button>
+                            <textarea id="journal-text" rows="10"
+                                      class="w-full p-4 border border-gray-300 rounded-xl text-lg resize-vertical focus:ring-2 focus:ring-blue-500"
+                                      placeholder="Write your thoughts, feelings, or anything on your mind..."></textarea>
+                            <button id="save-journal"
+                                    class="mt-6 bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-blue-700 shadow-lg transition-all">
+                                💾 Save Entry
+                            </button>
                             <div id="journal-result" class="mt-4"></div>
                         </div>
                     </div>
 
-                    <!-- Mood Calendar -->
+                    <!-- Mood Calendar Page (users only) -->
                     <div id="mood-page" class="page-content hidden">
                         <h2 class="text-3xl font-bold mb-8">📅 Mood Calendar</h2>
                         
-                        <!-- Calendar Container -->
-                        <div class="bg-white p-8 rounded-2xl shadow-xl mb-6">
-                            <!-- Calendar Header with Month Navigation -->
-                            <div class="flex items-center justify-between mb-6">
-                                <button id="prev-month" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold">← Previous</button>
-                                <h3 id="calendar-month-year" class="text-2xl font-bold text-gray-800"></h3>
-                                <button id="next-month" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold">Next →</button>
+                        <div class="bg-white p-8 rounded-2xl shadow-xl mb-8">
+                            <div class="flex items-center justify-between mb-8">
+                                <button id="prev-month"
+                                        class="px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold transition-all">
+                                    ← Prev
+                                </button>
+                                <h3 id="calendar-month-year"
+                                    class="text-3xl font-bold text-gray-800 mx-8"></h3>
+                                <button id="next-month"
+                                        class="px-6 py-3 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold transition-all">
+                                    Next →
+                                </button>
                             </div>
-                            
-                            <!-- Calendar Grid -->
-                            <div id="calendar-grid" class="grid grid-cols-7 gap-2 mb-6">
-                                <!-- Day headers -->
-                                <div class="text-center font-semibold text-gray-600 py-2">Sun</div>
-                                <div class="text-center font-semibold text-gray-600 py-2">Mon</div>
-                                <div class="text-center font-semibold text-gray-600 py-2">Tue</div>
-                                <div class="text-center font-semibold text-gray-600 py-2">Wed</div>
-                                <div class="text-center font-semibold text-gray-600 py-2">Thu</div>
-                                <div class="text-center font-semibold text-gray-600 py-2">Fri</div>
-                                <div class="text-center font-semibold text-gray-600 py-2">Sat</div>
-                                <!-- Calendar days will be inserted here by JavaScript -->
+                            <div id="calendar-grid" class="grid grid-cols-7 gap-2">
+                                <!-- Day headers + dynamic days -->
                             </div>
                         </div>
 
-                        <!-- Mood Selection Panel (shown when date is clicked) -->
-                        <div id="mood-selection-panel" class="bg-white p-8 rounded-2xl shadow-xl max-w-md hidden">
-                            <h3 class="text-xl font-semibold mb-4">Select Mood for <span id="selected-date-display"></span></h3>
-                            <div class="grid grid-cols-2 gap-4 mb-4">
-                                <button class="mood-option p-4 border-2 border-gray-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all" data-mood="3">
-                                    <div class="text-4xl mb-2">😊</div>
-                                    <div class="font-semibold">Happy</div>
+                        <!-- Mood Selection Panel -->
+                        <div id="mood-selection-panel"
+                             class="bg-white p-8 rounded-2xl shadow-xl max-w-md hidden mx-auto">
+                            <h3 class="text-2xl font-semibold mb-6 text-center">
+                                Select mood for <span id="selected-date-display"></span>
+                            </h3>
+                            <div class="grid grid-cols-2 gap-6 mb-8">
+                                <button class="mood-option p-6 border-2 border-gray-300 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all shadow-md"
+                                        data-mood="3">
+                                    <div class="text-5xl mb-3">😊</div>
+                                    <div class="font-bold text-lg">Happy</div>
                                 </button>
-                                <button class="mood-option p-4 border-2 border-gray-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all" data-mood="2">
-                                    <div class="text-4xl mb-2">😐</div>
-                                    <div class="font-semibold">Neutral</div>
+                                <button class="mood-option p-6 border-2 border-gray-300 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all shadow-md"
+                                        data-mood="2">
+                                    <div class="text-5xl mb-3">😐</div>
+                                    <div class="font-bold text-lg">Neutral</div>
                                 </button>
-                                <button class="mood-option p-4 border-2 border-gray-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all" data-mood="1">
-                                    <div class="text-4xl mb-2">😔</div>
-                                    <div class="font-semibold">Sad</div>
+                                <button class="mood-option p-6 border-2 border-gray-300 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all shadow-md"
+                                        data-mood="1">
+                                    <div class="text-5xl mb-3">😔</div>
+                                    <div class="font-bold text-lg">Sad</div>
                                 </button>
-                                <button class="mood-option p-4 border-2 border-gray-300 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all" data-mood="0">
-                                    <div class="text-4xl mb-2">😰</div>
-                                    <div class="font-semibold">Anxious</div>
+                                <button class="mood-option p-6 border-2 border-gray-300 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all shadow-md"
+                                        data-mood="0">
+                                    <div class="text-5xl mb-3">😰</div>
+                                    <div class="font-bold text-lg">Anxious</div>
                                 </button>
                             </div>
-                            <button id="save-mood" class="w-full bg-orange-500 text-white p-4 rounded-xl font-semibold text-lg hover:bg-orange-600">Save Mood</button>
-                            <button id="cancel-mood-selection" class="w-full mt-2 bg-gray-300 text-gray-700 p-3 rounded-xl font-semibold hover:bg-gray-400">Cancel</button>
-                            <div id="mood-result" class="mt-4"></div>
+                            <button id="save-mood"
+                                    class="w-full bg-orange-500 text-white py-4 rounded-xl font-bold text-lg hover:bg-orange-600 shadow-lg mb-3 transition-all">
+                                Save Mood
+                            </button>
+                            <button id="cancel-mood-selection"
+                                    class="w-full bg-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-300 transition-all">
+                                Cancel
+                            </button>
+                            <div id="mood-result" class="mt-6 text-center"></div>
                         </div>
                     </div>
 
-                    <!-- Chatbot Page -->
+                    <!-- Chatbot Page (users only) -->
                     <div id="chatbot-page" class="page-content hidden">
-                        <h2 class="text-3xl font-bold mb-8">🤖 24/7 Therapist</h2>
-                        <div class="bg-white rounded-2xl shadow-xl h-96 overflow-y-auto p-6 mb-6" id="chat-messages"></div>
-                        <div class="flex gap-4">
-                            <input type="text" id="chat-input" class="flex-1 p-4 border border-gray-300 rounded-xl text-lg" placeholder="Type your message...">
-                            <button id="send-chat" class="bg-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:bg-indigo-700">Send</button>
-                            <button id="reset-chat" class="bg-gray-500 text-white px-8 py-4 rounded-xl font-semibold hover:bg-gray-600">Reset</button>
+                        <h2 class="text-3xl font-bold mb-8">🤖 AI Therapist Chat</h2>
+                        
+                        <div class="bg-white p-6 rounded-2xl shadow-xl mb-6 flex items-center gap-4">
+                            <label class="font-semibold text-lg text-gray-700">Bot Voice:</label>
+                            <select id="bot-voice-select"
+                                    class="flex-1 p-3 border border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="">Auto (System Default)</option>
+                            </select>
                         </div>
+
+                        <div class="bg-white rounded-2xl shadow-xl h-96 overflow-y-auto p-6 mb-6 border-4 border-gray-100"
+                             id="chat-messages"></div>
+
+                        <div class="flex flex-col lg:flex-row gap-4">
+                            <div class="flex-1 flex gap-3">
+                                <input type="text" id="chat-input"
+                                       class="flex-1 p-5 border-2 border-gray-200 rounded-2xl text-lg focus:ring-4 focus:ring-blue-100 focus:border-blue-400 transition-all"
+                                       placeholder="Type your message or click 🎙️ to speak...">
+                                <button id="voice-btn"
+                                        class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-5 rounded-2xl font-bold text-lg hover:from-purple-600 hover:to-pink-600 shadow-lg transition-all"
+                                        title="Voice Input">🎙️</button>
+                            </div>
+                            <button id="send-chat"
+                                    class="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-indigo-700 shadow-lg transition-all">
+                                Send
+                            </button>
+                            <button id="reset-chat"
+                                    class="bg-gray-500 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:bg-gray-600 shadow-lg transition-all">
+                                Clear
+                            </button>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-3 flex items-center gap-2">
+                            💡 <span>Click microphone for voice input. Bot reads responses aloud automatically.</span>
+                        </p>
                     </div>
 
-                    <!-- Dashboard Page -->
+                    <!-- Dashboard Page (users only) -->
                     <div id="dashboard-page" class="page-content hidden">
-                        <h1 class="text-4xl font-bold mb-12">📊 MindMate Dashboard</h1>
-                        <div class="grid md:grid-cols-2 gap-8">
-                            <div class="bg-white p-6 rounded-2xl shadow-xl">
-                                <h3 class="text-2xl font-semibold mb-6">GAD & PHQ Scores</h3>
+                        <h1 class="text-4xl font-bold mb-12 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                            📊 Analytics Dashboard
+                        </h1>
+                        <div class="grid md:grid-cols-2 gap-8 mb-8">
+                            <div class="bg-white p-8 rounded-2xl shadow-xl">
+                                <h3 class="text-2xl font-semibold mb-8 text-blue-600">GAD-7 & PHQ-9 Scores</h3>
                                 <div id="questionnaire-chart" class="h-80"></div>
                             </div>
-                            <div class="bg-white p-6 rounded-2xl shadow-xl">
-                                <h3 class="text-2xl font-semibold mb-6">Mood Tracker</h3>
+                            <div class="bg-white p-8 rounded-2xl shadow-xl">
+                                <h3 class="text-2xl font-semibold mb-8 text-orange-600">Mood Trends</h3>
                                 <div id="mood-chart" class="h-80"></div>
                             </div>
                         </div>
-                        <div class="grid md:grid-cols-2 gap-8 mt-8">
-                            <div class="bg-white p-6 rounded-2xl shadow-xl">
-                                <h3 class="text-2xl font-semibold mb-6">Journal Sentiment</h3>
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <div class="bg-white p-8 rounded-2xl shadow-xl">
+                                <h3 class="text-2xl font-semibold mb-8 text-purple-600">Journal Sentiment</h3>
                                 <div id="journal-chart" class="h-80"></div>
                             </div>
-                            <div class="bg-white p-6 rounded-2xl shadow-xl">
-                                <h3 class="text-2xl font-semibold mb-6">Chat Sentiment</h3>
+                            <div class="bg-white p-8 rounded-2xl shadow-xl">
+                                <h3 class="text-2xl font-semibold mb-8 text-indigo-600">Chat Sentiment</h3>
                                 <div id="chat-chart" class="h-80"></div>
                             </div>
                         </div>
                     </div>
-                </div>
+
+                    <!-- Doctor Dashboard Page (doctors only) -->
+                    <div id="doctor-dashboard-page" class="page-content hidden">
+                        <h1 class="text-4xl font-bold mb-8">👨‍⚕️ Doctor Dashboard</h1>
+
+                        <div class="grid md:grid-cols-3 gap-6 mb-8">
+                            <div class="bg-white p-6 rounded-2xl shadow-xl">
+                                <h3 class="text-lg font-semibold mb-2">Registered Patients</h3>
+                                <p id="doc-total-patients" class="text-3xl font-bold">0</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-2xl shadow-xl">
+                                <h3 class="text-lg font-semibold mb-2">New Alerts</h3>
+                                <p id="doc-new-requests" class="text-3xl font-bold">0</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-2xl shadow-xl">
+                                <h3 class="text-lg font-semibold mb-2">Unread Messages</h3>
+                                <p id="doc-unread-messages" class="text-3xl font-bold">0</p>
+                            </div>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-2xl shadow-xl">
+                                <h3 class="text-xl font-semibold mb-4">Recent Patients</h3>
+                                <ul id="doc-recent-patients" class="space-y-3 text-sm text-gray-700">
+                                    <!-- filled by script.js -->
+                                </ul>
+                            </div>
+
+                            <div class="bg-white p-6 rounded-2xl shadow-xl">
+                                <h3 class="text-xl font-semibold mb-4">Negative Emotion Alerts</h3>
+                                <ul id="doc-recent-messages" class="space-y-3 text-sm text-gray-700">
+                                    <!-- filled by script.js with patients whose mood/sentiment is negative -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Page (both roles) -->
+                    <div id="profile-page" class="page-content hidden">
+                        <h1 class="text-4xl font-bold mb-12">👤 Profile Settings</h1>
+                        <div class="max-w-2xl mx-auto">
+                            <div class="bg-white p-10 rounded-3xl shadow-2xl">
+                                <form id="profile-form" class="space-y-6">
+                                    <div class="grid md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-semibold mb-2 text-gray-700">Full Name</label>
+                                            <input id="profile-name" type="text"
+                                                   class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                                                   placeholder="Your full name">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold mb-2 text-gray-700">Email</label>
+                                            <input id="profile-email" type="email" disabled
+                                                   class="w-full p-4 border border-gray-300 rounded-xl bg-gray-50 text-gray-500">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-semibold mb-2 text-gray-700">Mobile</label>
+                                            <input id="profile-mobile" type="tel"
+                                                   class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                                                   placeholder="+91 9876543210">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-semibold mb-2 text-gray-700">Location</label>
+                                            <input id="profile-location" type="text"
+                                                   class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                                                   placeholder="City, State">
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2 text-gray-700">Organization/Clinic</label>
+                                        <input id="profile-organization" type="text"
+                                               class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                                               placeholder="Your clinic/hospital name">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2 text-gray-700">Specialization</label>
+                                        <input id="profile-specialization" type="text"
+                                               class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500"
+                                               placeholder="e.g. Clinical Psychologist">
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-semibold mb-2 text-gray-700">About You</label>
+                                        <textarea id="profile-bio" rows="4"
+                                                  class="w-full p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 resize-vertical"
+                                                  placeholder="Tell us about yourself and your practice..."></textarea>
+                                    </div>
+
+                                    <button type="submit"
+                                            class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-4 rounded-2xl font-bold text-lg hover:from-blue-700 hover:to-indigo-700 shadow-xl transition-all">
+                                        💾 Save Profile
+                                    </button>
+                                    <p id="profile-message" class="mt-4 text-center text-sm font-medium"></p>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </div> <!-- /Main Content -->
             </div>
         </div>
     </div>
